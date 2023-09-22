@@ -1,18 +1,21 @@
 #include <stdio.h>
 #include "stackfuncs.h"
 
-int main()
+ErrorCode main()
 {
-    struct Stack stk = {};
+    stack_t stk = {};
 
     StackInit(&stk);
 
     Push(&stk, 10);
+
     Push(&stk, 20);
+
     Push(&stk, 30);
-    
 
+    Pop(&stk);
 
-    for (size_t i = 0; i < stk.size + 1; i++)
-        printf("%d ", stk.data[i]);
+    Push(&stk, 40);
+
+    PrintStack(&stk);
 }
