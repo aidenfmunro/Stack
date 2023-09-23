@@ -8,22 +8,23 @@ ErrorCode StackInit(stack_t* stk)
     stk->leftCanary  = LEFT_STRUCT_CANARY;
     stk->size        = 0;
     stk->capacity    = sizeof(elem_t);
-    stk->data        = (elem_t*)calloc((2 * CANARY_SIZE + 1), sizeof(elem_t)) + CANARY_SIZE * sizeof(elem_t);
+    stk->data        = (elem_t*)calloc((2 * CANARY_SIZE + 1), sizeof(elem_t));
     stk->rightCanary = RIGHT_STRUCT_CANARY; 
 
     placeCanary(stk, 0, LEFT_DATA_CANARY);
     placeCanary(stk, stk->capacity + sizeof(elem_t) * CANARY_SIZE, RIGHT_DATA_CANARY);
 
-    // ASSERTHARD(stk); 
+    //ASSERTHARD(stk); 
 
     return 0;
 }
 
 void placeCanary(stack_t* stk, size_t place, canary_t canary)
 {
-    // canary_t* canaryPtr = (canary_t*)canary;
     canary_t* temp = (canary_t*)calloc(1, sizeof(canary_t));
+
     *temp = canary;
+
     memcpy(stk->data + place, temp, sizeof(canary_t));
 }
 
@@ -32,14 +33,14 @@ void reallocStack(stack_t* stk, const int resize)
     switch (resize)
       {
         case EXPAND:
-            stk->data = (elem_t*)realloc(stk->data - CANARY_SIZE * sizeof(elem_t), stk->capacity * 2 + sizeof(canary_t));
+            stk->data = (elem_t*)realloc(stk->data, stk->capacity * 2 + sizeof(canary_t));
             stk->capacity *= 2;
             placeCanary(stk, stk->capacity + sizeof(elem_t) * CANARY_SIZE, RIGHT_DATA_CANARY);
 
             break;
 
         case SHRINK:
-            stk->data = (elem_t*)realloc(stk->data - CANARY_SIZE * sizeof(elem_t), stk->capacity / 2 + sizeof(canary_t));
+            stk->data = (elem_t*)realloc(stk->data, stk->capacity / 2 + sizeof(canary_t));
             stk->capacity /= 2;
             placeCanary(stk, stk->capacity + sizeof(elem_t) * CANARY_SIZE, RIGHT_DATA_CANARY);
 
