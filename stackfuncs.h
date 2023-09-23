@@ -6,30 +6,34 @@
 
 typedef int ErrorCode;
 
-const int RESIZE = 2;
+typedef unsigned long long canary_t;
 
+// const int TWO = 2;
 
-const unsigned long long LEFT_STRUCT_CANARY = 0xDEADAAAA;
-const unsigned long long RIGHT_STRUCT_CANARY = 0xDEADBBBB;
+const canary_t LEFT_STRUCT_CANARY = 0xDEADAAAA;
+const canary_t RIGHT_STRUCT_CANARY = 0xDEADBBBB;
 
-const unsigned long long LEFT_DATA_CANARY = 0xDEADEEEE;
-const unsigned long long RIGHT_DATA_CANARY = 0xDEADFFFF;
+const canary_t LEFT_DATA_CANARY = 0xDEADEEEE;
+const canary_t RIGHT_DATA_CANARY = 0xDEADFFFF;
 
 #define INT_T
 
 #ifdef INT_T
     typedef int elem_t;
     const elem_t POISON = INT_MAX;
+    const int CANARY_SIZE = 2;
 #endif
 
 #ifdef FLOAT_T
     typedef float elem_t;
     const elem_t POISON = NAN;
+    const int CANARY_SIZE = 2;
 #endif
 
 #ifdef DOUBLE_T
     typedef double elem_t;
     const elem_t POISON = NAN;
+
 #endif
 
 #ifdef CHAR_T
@@ -42,18 +46,35 @@ const unsigned long long RIGHT_DATA_CANARY = 0xDEADFFFF;
     const elem_t = "POISON";
 #endif
 
-#define ASSERT_HARD(stk)                          \
-    {                                             \
-        if (stackVerify(&(stk)) == STACK_WORKING) \
-            Dump(&(stk));                         \       
+#define ASSERTHARD(stk)                                 \
+    {                                                   \
+        if (stackVerify((stk)))                         \
+            DUMP((stk));                                \
+            exit(0);                                    \
     }
 
-#define DUMP(stk) \
-    {                                                    \
-    stackDump(&(stk), __FILE__, __LINE__, __func__);     \                                       
+#define DUMP(stk)                                       \
+    {                                                   \
+    stackDump((stk), __FILE__, __LINE__, __func__);     \
     }
 
-enum STACK_STATUS
+#define copy(a, b, size)						        \ 
+    do                                                  \
+      {                                                 \
+        char *_a = (char*)a, *_b = (char*)b;	        \
+        for (size_t i = 0; i < size; i++)	            \
+	        {							                \
+	          _a[i]= _b[i];			                    \
+	        } 					                        \ 
+      } while (0)
+
+enum RESIZE
+{
+    SHRINK = 0,
+    EXPAND = 1
+};    
+
+enum STATUS
 {
     STACK_BROKEN  = 0,
     STACK_WORKING = 1
@@ -75,12 +96,21 @@ enum ERRORS
 
 typedef struct Stack
 {
+    canary_t leftCanary;
+
     elem_t* data;
-    size_t capacity,
-               size;
+    size_t capacity;
+    size_t size;
+
+    canary_t rightCanary;
+
 } stack_t;
 
 ErrorCode StackInit(stack_t* stk);
+
+void reallocStack(stack_t* stk, const int resize);
+
+void placeCanary(stack_t* stk, size_t place, canary_t canary);
 
 ErrorCode StackDtor(stack_t* stk);
 
@@ -89,8 +119,6 @@ ErrorCode Push(stack_t* stk, elem_t value);
 ErrorCode Pop(stack_t* stk);
 
 ErrorCode PrintStack(stack_t* stk);
-
-void Dump(stack_t* stk);
 
 ErrorCode stackVerify(stack_t* stk);
 

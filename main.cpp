@@ -15,7 +15,7 @@ ErrorCode main()
 
     Pop(&stk);
 
-    Push(&stk, 40);
+    Push(&stk, 50);
 
     PrintStack(&stk);
 }
