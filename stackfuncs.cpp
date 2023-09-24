@@ -14,7 +14,6 @@ ErrorCode StackInit(stack_t* stk)
     placeCanary(stk, 0, LEFT_DATA_CANARY);
     placeCanary(stk, 1 + CANARY_SIZE, RIGHT_DATA_CANARY);
 
-    PrintStack(stk);
     //ASSERTHARD(stk); 
 
     return 0;
@@ -27,7 +26,7 @@ void placeCanary(stack_t* stk, size_t place, canary_t canary)
     *temp = canary;
 
     memcpy(stk->data + place, temp, sizeof(canary_t));
-    printf("%llu\n", *(stk->data + place));
+    
     free(temp);
 }
 
@@ -38,7 +37,7 @@ void reallocStack(stack_t* stk, const int resize)
         case EXPAND:
             stk->data = (elem_t*)realloc(stk->data, stk->capacity * 2 + sizeof(canary_t) * 2);
             stk->capacity *= 2;
-
+            
             break;
 
         case SHRINK:
@@ -76,8 +75,6 @@ ErrorCode Pop(stack_t* stk)
     if (stk->capacity > 2 * (stk->size + 1) * sizeof(elem_t))
         reallocStack(stk, SHRINK);
 
-    // stk->data[CANARY_SIZE + stk->size--] = POISON;
-
     stk->size--;
     placeCanary(stk, (CANARY_SIZE + stk->size) , RIGHT_DATA_CANARY);
 
@@ -95,15 +92,19 @@ ErrorCode StackDtor(stack_t* stk)
 
 ErrorCode PrintStack(stack_t* stk)
 {
-    for (size_t i = 0; i < stk->capacity / sizeof(elem_t) + CANARY_SIZE * 2; i++)
+    printf("\tleft data canary = %llx\n", stk->data[0]);
+
+    for (size_t i = CANARY_SIZE; i < stk->size + CANARY_SIZE; i++)
         printf("%d\n", stk->data[i]);
-    printf("---------------------------------\n");
+    
+    printf("\tright data canary = %llx\n", stk->data[CANARY_SIZE + stk->size]);
     return 0;
 }
 
-void stackDump(stack_t* stk, const char* filename, const int lineNum, const char* function)
+void stackDump(stack_t* stk, const char* filename, const int lineNum, const char* functionName)
 {
-    printf("Stack [%p], ERROR ..., \n", stk);
+    printf("Stack [%p], ERROR #%d, in file %s, line %s, \
+           function: %s \n", stk, stackVerify(stk), filename, lineNum, functionName);
     printf("{\n");
     printf("\tleft struct canary = %llx\n", stk->leftCanary);
     printf("\tsize = %llu\n", stk->size);
@@ -111,7 +112,7 @@ void stackDump(stack_t* stk, const char* filename, const int lineNum, const char
     printf("\tright struct canary = %llx\n", stk->rightCanary);
     printf("\tdata[%p]:\n", stk->data);
 
-    PrintStack(stk);
+
     printf("}\n");
 }
 
@@ -123,10 +124,6 @@ ErrorCode stackVerify(stack_t* stk)
         error |= NULLPTR_STACK;
     if (stk->data == NULL)
         error |= NULLPTR_DATA;
-    if (stk->size < 0)
-        error |= NEGATIVE_SIZE;
-    if (stk->capacity < 0)
-        error |= NEGATIVE_CAPACITY;
 
     return error;
 }

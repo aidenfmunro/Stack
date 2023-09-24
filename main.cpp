@@ -20,7 +20,7 @@ ErrorCode main()
     Push(&stk, 70);
 
     PrintStack(&stk);
-    // PrintStack(&stk);
+    /*
     printf("%llx\n", stk.data[0]);
     printf("%d\n", stk.data[2]);
     printf("%d\n", stk.data[3]);
@@ -28,4 +28,5 @@ ErrorCode main()
     printf("%d\n", stk.data[5]);
     printf("%llu\n", stk.data[6]);
     printf("%llx\n", stk.data[7]);
+    */
 }

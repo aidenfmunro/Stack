@@ -83,10 +83,10 @@ enum STATUS
 
 enum ERRORS
 {
-    NULLPTR_STACK           = 1,
+    NULLPTR_STACK           = 1, 
     NULLPTR_DATA            = 2,
-    NEGATIVE_SIZE           = 4,
-    NEGATIVE_CAPACITY       = 8,
+    SIZE_BIGGER_CAPACITY    = 4,
+    CAPACITY_SMALLER_SIZE   = 8,
     LCANARY_DATA_CHANGED    = 16,
     RCANARY_DATA_CHANGED    = 32,
     LCANARY_STRUCT_CHANGED  = 64,
@@ -123,6 +123,6 @@ ErrorCode PrintStack(stack_t* stk);
 
 ErrorCode stackVerify(stack_t* stk);
 
-void stackDump(stack_t* stk, const char* filename, const int lineNum, const char* function);
+void stackDump(stack_t* stk, const char* filename, const int lineNum, const char* functionName);
 
 #endif
