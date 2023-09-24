@@ -16,11 +16,16 @@ ErrorCode main()
     Pop(&stk);
 
     Push(&stk, 50);
+    Push(&stk, 60);
+    Push(&stk, 70);
 
     PrintStack(&stk);
-    printf("%llu\n", stk.data[0]);
-    printf("%d\n", stk.data[1]);
+    // PrintStack(&stk);
+    printf("%llx\n", stk.data[0]);
     printf("%d\n", stk.data[2]);
-    printf("%p\n", stk.data[3]);
-    printf("%p\n", stk.data[4]);
+    printf("%d\n", stk.data[3]);
+    printf("%d\n", stk.data[4]);
+    printf("%d\n", stk.data[5]);
+    printf("%llu\n", stk.data[6]);
+    printf("%llx\n", stk.data[7]);
 }

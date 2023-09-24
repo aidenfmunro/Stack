@@ -33,12 +33,13 @@ const canary_t RIGHT_DATA_CANARY = 0xDEADFFFF;
 #ifdef DOUBLE_T
     typedef double elem_t;
     const elem_t POISON = NAN;
-
+    const int CANARY_SIZE = 1;
 #endif
 
 #ifdef CHAR_T
     typedef char elem_t;
     const elem_t POISON = '!';
+    const int CANARY_SIZE = 8;
 #endif
 
 #ifdef STRING_T

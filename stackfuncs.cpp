@@ -11,9 +11,10 @@ ErrorCode StackInit(stack_t* stk)
     stk->data        = (elem_t*)calloc((2 * CANARY_SIZE + 1), sizeof(elem_t));
     stk->rightCanary = RIGHT_STRUCT_CANARY; 
 
-    // placeCanary(stk, 0, LEFT_DATA_CANARY);
-    // placeCanary(stk, stk->capacity + sizeof(elem_t) * CANARY_SIZE, RIGHT_DATA_CANARY);
+    placeCanary(stk, 0, LEFT_DATA_CANARY);
+    placeCanary(stk, 1 + CANARY_SIZE, RIGHT_DATA_CANARY);
 
+    PrintStack(stk);
     //ASSERTHARD(stk); 
 
     return 0;
@@ -25,16 +26,9 @@ void placeCanary(stack_t* stk, size_t place, canary_t canary)
 
     *temp = canary;
 
-    printf("%llu \n", *temp);
-
-    COPY(stk->data + place, temp, sizeof(canary_t));
-    /*
-    for (size_t i = 0; i < 2; i++)
-        {
-            printf("%d ", stk->data + i * sizeof(elem_t));
-        }
-    */
-   printf("%llu \n", *stk->data);
+    memcpy(stk->data + place, temp, sizeof(canary_t));
+    printf("%llu\n", *(stk->data + place));
+    free(temp);
 }
 
 void reallocStack(stack_t* stk, const int resize)
@@ -42,22 +36,20 @@ void reallocStack(stack_t* stk, const int resize)
     switch (resize)
       {
         case EXPAND:
-            stk->data = (elem_t*)realloc(stk->data, stk->capacity * 2 + sizeof(canary_t));
+            stk->data = (elem_t*)realloc(stk->data, stk->capacity * 2 + sizeof(canary_t) * 2);
             stk->capacity *= 2;
-            placeCanary(stk, stk->capacity + sizeof(elem_t) * CANARY_SIZE, RIGHT_DATA_CANARY);
 
             break;
 
         case SHRINK:
-            stk->data = (elem_t*)realloc(stk->data, stk->capacity / 2 + sizeof(canary_t));
+            stk->data = (elem_t*)realloc(stk->data, stk->capacity / 2 + sizeof(canary_t) * 2);
             stk->capacity /= 2;
-            placeCanary(stk, stk->capacity + sizeof(elem_t) * CANARY_SIZE, RIGHT_DATA_CANARY);
 
             break;
         
         default:
             break;
-    }    
+      }    
 }
     
 
@@ -69,7 +61,8 @@ ErrorCode Push(stack_t* stk, elem_t value)
         reallocStack(stk, EXPAND);
       
 
-    stk->data[stk->size++] = value;
+    stk->data[CANARY_SIZE + stk->size++] = value;
+    placeCanary(stk, (CANARY_SIZE + stk->size), RIGHT_DATA_CANARY);
 
     // ASSERTHARD(stk);
 
@@ -83,7 +76,10 @@ ErrorCode Pop(stack_t* stk)
     if (stk->capacity > 2 * (stk->size + 1) * sizeof(elem_t))
         reallocStack(stk, SHRINK);
 
-    stk->data[stk->size--] = POISON;
+    // stk->data[CANARY_SIZE + stk->size--] = POISON;
+
+    stk->size--;
+    placeCanary(stk, (CANARY_SIZE + stk->size) , RIGHT_DATA_CANARY);
 
     // ASSERTHARD(stk);
 
@@ -99,9 +95,9 @@ ErrorCode StackDtor(stack_t* stk)
 
 ErrorCode PrintStack(stack_t* stk)
 {
-    for (size_t i = 0; i < stk->size; i++)
-        printf("%d ", stk->data[i]);
-
+    for (size_t i = 0; i < stk->capacity / sizeof(elem_t) + CANARY_SIZE * 2; i++)
+        printf("%d\n", stk->data[i]);
+    printf("---------------------------------\n");
     return 0;
 }
 
