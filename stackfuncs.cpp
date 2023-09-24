@@ -3,8 +3,9 @@
 #include <string.h>
 #include "stackfuncs.h"
 
-ErrorCode StackInit(stack_t* stk)
+void StackInit(stack_t* stk)
 {  
+
     stk->leftCanary  = LEFT_STRUCT_CANARY;
     stk->size        = 0;
     stk->capacity    = sizeof(elem_t);
@@ -14,13 +15,13 @@ ErrorCode StackInit(stack_t* stk)
     placeCanary(stk, 0, LEFT_DATA_CANARY);
     placeCanary(stk, 1 + CANARY_SIZE, RIGHT_DATA_CANARY);
 
-    //ASSERTHARD(stk); 
-
-    return 0;
+    // ASSERTHARD(stk); 
 }
 
 void placeCanary(stack_t* stk, size_t place, canary_t canary)
 {
+    //ASSERTHARD(stk);
+
     canary_t* temp = (canary_t*)calloc(1, sizeof(canary_t));
 
     *temp = canary;
@@ -28,10 +29,14 @@ void placeCanary(stack_t* stk, size_t place, canary_t canary)
     memcpy(stk->data + place, temp, sizeof(canary_t));
     
     free(temp);
+
+    //ASSERTHARD(stk);
 }
 
 void reallocStack(stack_t* stk, const int resize)
 {
+    //ASSERTHARD(stk);
+
     switch (resize)
       {
         case EXPAND:
@@ -48,11 +53,13 @@ void reallocStack(stack_t* stk, const int resize)
         
         default:
             break;
-      }    
+      } 
+
+    //ASSERTHARD(stk);   
 }
     
 
-ErrorCode Push(stack_t* stk, elem_t value)
+void Push(stack_t* stk, elem_t value)
 {
     // ASSERTHARD(stk);
 
@@ -66,10 +73,9 @@ ErrorCode Push(stack_t* stk, elem_t value)
 
     // ASSERTHARD(stk);
 
-    return 0;
 }
 
-ErrorCode Pop(stack_t* stk)
+void Pop(stack_t* stk)
 {
     // ASSERTHARD(stk);
 
@@ -82,7 +88,6 @@ ErrorCode Pop(stack_t* stk)
 
     // ASSERTHARD(stk);
 
-    return 0;
 }
 
 void poisonFill(stack_t* stk)
@@ -91,35 +96,38 @@ void poisonFill(stack_t* stk)
         stk->data[i] = POISON;
 }
 
-ErrorCode StackDtor(stack_t* stk)
+void StackDtor(stack_t* stk)
 {
     free(stk->data);
 
-    return 0;
 }
 
-ErrorCode PrintStack(stack_t* stk)
+void PrintStack(stack_t* stk)
 {
     printf("\tleft data canary = %llx\n", stk->data[0]);
 
     for (size_t i = CANARY_SIZE; i < stk->capacity / sizeof(elem_t) + CANARY_SIZE; i++)
-        printf("%d\n", stk->data[i]);
+    if (stk->data[i] == POISON)
+        printf("\t\t ! [%d] %" FORMAT " (POISON!)\n",i - CANARY_SIZE, stk->data[i]);
+    else
+        printf("\t\t   [%d] %" FORMAT "\n",i - CANARY_SIZE, stk->data[i]);
     
     printf("\tright data canary = %llx\n", stk->data[CANARY_SIZE + stk->capacity / sizeof(elem_t)]);
-    return 0;
 }
 
 void stackDump(stack_t* stk, const char* filename, const int lineNum, const char* functionName)
 {
-    printf("Stack [%p], ERROR #%d, in file %s, line %s, \
-           function: %s \n", stk, stackVerify(stk), filename, lineNum, functionName);
+    printf("Stack [%p], ERROR #%u, in file %s, line %d, \
+    function: %s \n", stk, stackVerify(stk), filename, lineNum, functionName);
     printf("{\n");
     printf("\tleft struct canary = %llx\n", stk->leftCanary);
     printf("\tsize = %llu\n", stk->size);
     printf("\tcapacity = %llu\n", stk->capacity);
     printf("\tright struct canary = %llx\n", stk->rightCanary);
+    printf("\n");
     printf("\tdata[%p]:\n", stk->data);
 
+    PrintStack(stk);   
 
     printf("}\n");
 }
@@ -132,6 +140,21 @@ ErrorCode stackVerify(stack_t* stk)
         error |= NULLPTR_STACK;
     if (stk->data == NULL)
         error |= NULLPTR_DATA;
+    if (stk->size > stk->capacity / sizeof(elem_t))
+        error |= SIZE_BIGGER_CAPACITY;
+    /*
+    if (stk->data[0] != LEFT_DATA_CANARY)
+        error |= LCANARY_DATA_CHANGED;
+    if (stk->data[CANARY_SIZE + stk->capacity / sizeof(elem_t)] != RCANARY_DATA_CHANGED)
+        error |= RCANARY_DATA_CHANGED;
+    */    
+    if (stk->leftCanary != LEFT_STRUCT_CANARY)
+        error |= LCANARY_STRUCT_CHANGED;
+    if (stk->rightCanary != RIGHT_STRUCT_CANARY)
+        error |= RCANARY_STRUCT_CHANGED;
+    if (stk->capacity > MAX_STACK_SIZE)
+        error |= MAX_CAPACITY_OVERFLOW;
 
     return error;
 }
+

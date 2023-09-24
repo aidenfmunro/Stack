@@ -8,7 +8,7 @@ typedef int ErrorCode;
 
 typedef unsigned long long canary_t;
 
-// const int TWO = 2;
+const int MAX_STACK_SIZE = 4000 * sizeof(canary_t);
 
 const canary_t LEFT_STRUCT_CANARY = 0xDEADAAAA;
 const canary_t RIGHT_STRUCT_CANARY = 0xDEADBBBB;
@@ -19,32 +19,38 @@ const canary_t RIGHT_DATA_CANARY = 0xDEADFFFF;
 #define INT_T
 
 #ifdef INT_T
+    #define FORMAT "d"
     typedef int elem_t;
     const elem_t POISON = INT_MAX;
     const int CANARY_SIZE = 2;
 #endif
 
 #ifdef FLOAT_T
+    #define FORMAT "f"
     typedef float elem_t;
     const elem_t POISON = NAN;
     const int CANARY_SIZE = 2;
 #endif
 
 #ifdef DOUBLE_T
+    #define FORMAT "lg"
     typedef double elem_t;
     const elem_t POISON = NAN;
     const int CANARY_SIZE = 1;
 #endif
 
 #ifdef CHAR_T
+    #define FORMAT "c"
     typedef char elem_t;
     const elem_t POISON = '!';
     const int CANARY_SIZE = 8;
 #endif
 
 #ifdef STRING_T
+    #define FORMAT "s"
     typedef char* elem_t;
-    const elem_t = "POISON";
+    const elem_t POISON = "POISON";
+    const int CANARY_SIZE = 8;
 #endif
 
 #define ASSERTHARD(stk)                                 \
@@ -86,12 +92,11 @@ enum ERRORS
     NULLPTR_STACK           = 1, 
     NULLPTR_DATA            = 2,
     SIZE_BIGGER_CAPACITY    = 4,
-    CAPACITY_SMALLER_SIZE   = 8,
-    LCANARY_DATA_CHANGED    = 16,
-    RCANARY_DATA_CHANGED    = 32,
-    LCANARY_STRUCT_CHANGED  = 64,
-    RCANARY_STRUCT_CHANGED  = 128,
-    MAX_CAPACITY_OVERFLOW   = 264,
+    LCANARY_DATA_CHANGED    = 8,
+    RCANARY_DATA_CHANGED    = 16,
+    LCANARY_STRUCT_CHANGED  = 32,
+    RCANARY_STRUCT_CHANGED  = 64,
+    MAX_CAPACITY_OVERFLOW   = 128,
 };
 
 
@@ -107,7 +112,7 @@ typedef struct Stack
 
 } stack_t;
 
-ErrorCode StackInit(stack_t* stk);
+void StackInit(stack_t* stk);
 
 void reallocStack(stack_t* stk, const int resize);
 
@@ -115,13 +120,13 @@ void placeCanary(stack_t* stk, size_t place, canary_t canary);
 
 void poisonFill(stack_t* stk);
 
-ErrorCode StackDtor(stack_t* stk);
+void StackDtor(stack_t* stk);
 
-ErrorCode Push(stack_t* stk, elem_t value);
+void Push(stack_t* stk, elem_t value);
 
-ErrorCode Pop(stack_t* stk);
+void Pop(stack_t* stk);
 
-ErrorCode PrintStack(stack_t* stk);
+void PrintStack(stack_t* stk);
 
 ErrorCode stackVerify(stack_t* stk);
 
