@@ -58,7 +58,7 @@ const canary_t RIGHT_DATA_CANARY = 0xDEADFFFF;
     stackDump((stk), __FILE__, __LINE__, __func__);     \
     }
 
-#define copy(a, b, size)						        \ 
+#define COPY(a, b, size)						        \ 
     do                                                  \
       {                                                 \
         char *_a = (char*)a, *_b = (char*)b;	        \

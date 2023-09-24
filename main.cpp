@@ -18,4 +18,9 @@ ErrorCode main()
     Push(&stk, 50);
 
     PrintStack(&stk);
+    printf("%llu\n", stk.data[0]);
+    printf("%d\n", stk.data[1]);
+    printf("%d\n", stk.data[2]);
+    printf("%p\n", stk.data[3]);
+    printf("%p\n", stk.data[4]);
 }

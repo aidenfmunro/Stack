@@ -11,8 +11,8 @@ ErrorCode StackInit(stack_t* stk)
     stk->data        = (elem_t*)calloc((2 * CANARY_SIZE + 1), sizeof(elem_t));
     stk->rightCanary = RIGHT_STRUCT_CANARY; 
 
-    placeCanary(stk, 0, LEFT_DATA_CANARY);
-    placeCanary(stk, stk->capacity + sizeof(elem_t) * CANARY_SIZE, RIGHT_DATA_CANARY);
+    // placeCanary(stk, 0, LEFT_DATA_CANARY);
+    // placeCanary(stk, stk->capacity + sizeof(elem_t) * CANARY_SIZE, RIGHT_DATA_CANARY);
 
     //ASSERTHARD(stk); 
 
@@ -25,7 +25,16 @@ void placeCanary(stack_t* stk, size_t place, canary_t canary)
 
     *temp = canary;
 
-    memcpy(stk->data + place, temp, sizeof(canary_t));
+    printf("%llu \n", *temp);
+
+    COPY(stk->data + place, temp, sizeof(canary_t));
+    /*
+    for (size_t i = 0; i < 2; i++)
+        {
+            printf("%d ", stk->data + i * sizeof(elem_t));
+        }
+    */
+   printf("%llu \n", *stk->data);
 }
 
 void reallocStack(stack_t* stk, const int resize)
