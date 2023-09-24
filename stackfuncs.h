@@ -113,6 +113,8 @@ void reallocStack(stack_t* stk, const int resize);
 
 void placeCanary(stack_t* stk, size_t place, canary_t canary);
 
+void poisonFill(stack_t* stk);
+
 ErrorCode StackDtor(stack_t* stk);
 
 ErrorCode Push(stack_t* stk, elem_t value);

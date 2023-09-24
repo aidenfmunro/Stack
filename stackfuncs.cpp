@@ -37,13 +37,13 @@ void reallocStack(stack_t* stk, const int resize)
         case EXPAND:
             stk->data = (elem_t*)realloc(stk->data, stk->capacity * 2 + sizeof(canary_t) * 2);
             stk->capacity *= 2;
-            
+            placeCanary(stk, CANARY_SIZE + stk->capacity / sizeof(elem_t), RIGHT_DATA_CANARY);
             break;
 
         case SHRINK:
             stk->data = (elem_t*)realloc(stk->data, stk->capacity / 2 + sizeof(canary_t) * 2);
             stk->capacity /= 2;
-
+            placeCanary(stk, CANARY_SIZE + stk->capacity / sizeof(elem_t), RIGHT_DATA_CANARY);
             break;
         
         default:
@@ -61,7 +61,8 @@ ErrorCode Push(stack_t* stk, elem_t value)
       
 
     stk->data[CANARY_SIZE + stk->size++] = value;
-    placeCanary(stk, (CANARY_SIZE + stk->size), RIGHT_DATA_CANARY);
+
+    poisonFill(stk);
 
     // ASSERTHARD(stk);
 
@@ -75,12 +76,19 @@ ErrorCode Pop(stack_t* stk)
     if (stk->capacity > 2 * (stk->size + 1) * sizeof(elem_t))
         reallocStack(stk, SHRINK);
 
-    stk->size--;
-    placeCanary(stk, (CANARY_SIZE + stk->size) , RIGHT_DATA_CANARY);
+    stk->data[CANARY_SIZE + stk->size--] = POISON;
+
+    poisonFill(stk);
 
     // ASSERTHARD(stk);
 
     return 0;
+}
+
+void poisonFill(stack_t* stk)
+{
+    for(size_t i = CANARY_SIZE + stk->size; i < CANARY_SIZE + stk->capacity / sizeof(elem_t); i++)
+        stk->data[i] = POISON;
 }
 
 ErrorCode StackDtor(stack_t* stk)
@@ -94,10 +102,10 @@ ErrorCode PrintStack(stack_t* stk)
 {
     printf("\tleft data canary = %llx\n", stk->data[0]);
 
-    for (size_t i = CANARY_SIZE; i < stk->size + CANARY_SIZE; i++)
+    for (size_t i = CANARY_SIZE; i < stk->capacity / sizeof(elem_t) + CANARY_SIZE; i++)
         printf("%d\n", stk->data[i]);
     
-    printf("\tright data canary = %llx\n", stk->data[CANARY_SIZE + stk->size]);
+    printf("\tright data canary = %llx\n", stk->data[CANARY_SIZE + stk->capacity / sizeof(elem_t)]);
     return 0;
 }
 
