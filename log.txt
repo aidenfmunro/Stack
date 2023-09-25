@@ -1,0 +1,44 @@
+Stack [000000B0BDDFFAD0], ERROR #0, in file main.cpp, line 41, function: main
+{
+	left struct canary = deadaaaa
+	size = 18
+	capacity = 128
+	right struct canary = deadbbbb
+
+	data[000002140C87D570]:
+
+	left data canary = deadeeee
+		   [0] 10
+		   [1] 80
+		   [2] 90
+		   [3] 100
+		   [4] 110
+		   [5] 110
+		   [6] 120
+		   [7] 130
+		   [8] 140
+		   [9] 150
+		   [10] 160
+		   [11] 170
+		   [12] 180
+		   [13] 190
+		   [14] 200
+		   [15] 210
+		   [16] 220
+		   [17] 230
+		 ! [18] 2147483647 (POISON!)
+		 ! [19] 2147483647 (POISON!)
+		 ! [20] 2147483647 (POISON!)
+		 ! [21] 2147483647 (POISON!)
+		 ! [22] 2147483647 (POISON!)
+		 ! [23] 2147483647 (POISON!)
+		 ! [24] 2147483647 (POISON!)
+		 ! [25] 2147483647 (POISON!)
+		 ! [26] 2147483647 (POISON!)
+		 ! [27] 2147483647 (POISON!)
+		 ! [28] 2147483647 (POISON!)
+		 ! [29] 2147483647 (POISON!)
+		 ! [30] 2147483647 (POISON!)
+		 ! [31] 2147483647 (POISON!)
+	right data canary = deadffff
+}

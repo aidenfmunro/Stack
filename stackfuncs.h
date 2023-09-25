@@ -10,6 +10,8 @@ typedef unsigned long long canary_t;
 
 const int MAX_STACK_SIZE = 4000 * sizeof(canary_t);
 
+const int NULLPTR = 0;
+
 const canary_t LEFT_STRUCT_CANARY = 0xDEADAAAA;
 const canary_t RIGHT_STRUCT_CANARY = 0xDEADBBBB;
 
@@ -53,17 +55,28 @@ const canary_t RIGHT_DATA_CANARY = 0xDEADFFFF;
     const int CANARY_SIZE = 8;
 #endif
 
-#define ASSERTHARD(stk)                                 \
-    {                                                   \
-        if (stackVerify((stk)))                         \
-            DUMP((stk));                                \
-            exit(0);                                    \
-    }
+#define ASSERTSOFT(EXPRESSION, ERROR_CODE)                                       \
+    if (!(EXPRESSION))                                                         \
+      {                                                                        \
+        fprintf (stderr,"%s, failed at %s:%d\n", #ERROR_CODE                   \
+        , __FILE__, __LINE__);                                                 \
+        exit(ERROR_CODE);                                                      \
+      }
 
-#define DUMP(stk)                                       \
-    {                                                   \
-    stackDump((stk), __FILE__, __LINE__, __func__);     \
-    }
+#define ASSERTHARD(stk)                                 \
+    do {                                                \
+        if (stackVerify(stk))                         \
+          {                                             \
+            DUMP(stk);                                \
+            exit(0);                                    \
+          }                                             \
+        } while(0);
+                                                       
+
+#define DUMP(stk)                                           \
+    do {                                                    \
+        stackDump(stk, __FILE__, __LINE__, __func__);     \
+       } while(0);
 
 #define COPY(a, b, size)						        \ 
     do                                                  \
@@ -74,6 +87,8 @@ const canary_t RIGHT_DATA_CANARY = 0xDEADFFFF;
 	          _a[i]= _b[i];			                    \
 	        } 					                        \ 
       } while (0)
+
+
 
 enum RESIZE
 {
@@ -126,10 +141,10 @@ void Push(stack_t* stk, elem_t value);
 
 void Pop(stack_t* stk);
 
-void PrintStack(stack_t* stk);
+void PrintStack(const stack_t* stk);
 
-ErrorCode stackVerify(stack_t* stk);
+ErrorCode stackVerify(const stack_t* stk);
 
-void stackDump(stack_t* stk, const char* filename, const int lineNum, const char* functionName);
+void stackDump(const stack_t* stk, const char* filename, const int lineNum, const char* functionName);
 
 #endif
