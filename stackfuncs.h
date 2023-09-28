@@ -9,7 +9,7 @@ typedef int ErrorCode;
 
 typedef unsigned long long canary_t;
 
-const uint32_t MOD = 65521;
+const uint32_t MOD_ADLER = 65521;
 
 const int MAX_STACK_SIZE = 4000 * sizeof(canary_t);
 
@@ -62,19 +62,21 @@ const canary_t RIGHT_DATA_CANARY = 0xDEADFFFF;
       }
 
 #define ASSERTHARD(stk)                                 \
-    do {                                                \
+    do                                                  \
+      {                                                 \
         if (stackVerify(stk))                           \
           {                                             \
             DUMP(stk);                                  \
-            exit(0);                                    \
+            exit(1);                                    \
           }                                             \
-        } while(0);
+      } while(0);
                                                        
 
 #define DUMP(stk)                                       \
-    do {                                                \
+    do                                                  \
+      {                                                 \
         stackDump(stk, __FILE__, __LINE__, __func__);   \
-       } while(0);
+      } while(0);
 
 #define COPY(a, b, size)						        \ 
     do                                                  \
@@ -84,13 +86,7 @@ const canary_t RIGHT_DATA_CANARY = 0xDEADFFFF;
 	        {							                \
 	          _a[i] = _b[i];			                \
 	        } 					                        \ 
-      } while (0)
-
-enum RESIZE
-{
-    SHRINK = 0,
-    EXPAND = 1
-};    
+      } while(0)
 
 enum STATUS
 {
@@ -108,9 +104,9 @@ enum ERRORS
     LCANARY_STRUCT_CHANGED  = 32,
     RCANARY_STRUCT_CHANGED  = 64,
     CANARY_SIZE_CHANGED     = 128,
-    MAX_CAPACITY_OVERFLOW   = 256
+    MAX_CAPACITY_OVERFLOW   = 256,
+    HASH_CHANGED            = 512
 };
-
 
 typedef struct Stack
 {
@@ -119,6 +115,7 @@ typedef struct Stack
     elem_t* data;
     size_t capacity;
     size_t size;
+    unsigned int hash;
 
     canary_t rightCanary;
 
@@ -126,7 +123,7 @@ typedef struct Stack
 
 void StackInit(stack_t* stk);
 
-void reallocStack(stack_t* stk, const int resize);
+void reallocStack(stack_t* stk);
 
 void placeCanary(stack_t* stk, size_t place, canary_t canary);
 
@@ -143,5 +140,7 @@ void PrintStack(const stack_t* stk);
 ErrorCode stackVerify(const stack_t* stk);
 
 void stackDump(const stack_t* stk, const char* filename, const int lineNum, const char* functionName);
+
+unsigned int hashAdler32(const stack_t* stack);
 
 #endif

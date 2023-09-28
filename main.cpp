@@ -20,11 +20,7 @@ ErrorCode main()
     Pop(&stack);
     Push(&stack, 50);
     Push(&stack, 60);
-    Push(&stack, 70);
-    Push(&stack, 50);
-    Push(&stack, 60);
-    Push(&stack, 70);
-    Push(&stack, 100);
+   
     Push(&stack, 900);
 
     // PrintStack(&stk);
