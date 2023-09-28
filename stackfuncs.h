@@ -3,10 +3,13 @@
 
 #include <stdlib.h>
 #include <math.h>
+#include <stdint.h>
 
 typedef int ErrorCode;
 
 typedef unsigned long long canary_t;
+
+const uint32_t MOD = 65521;
 
 const int MAX_STACK_SIZE = 4000 * sizeof(canary_t);
 
@@ -24,58 +27,53 @@ const canary_t RIGHT_DATA_CANARY = 0xDEADFFFF;
     #define FORMAT "d"
     typedef int elem_t;
     const elem_t POISON = INT_MAX;
-    const int CANARY_SIZE = 2;
 #endif
 
 #ifdef FLOAT_T
     #define FORMAT "f"
     typedef float elem_t;
     const elem_t POISON = NAN;
-    const int CANARY_SIZE = 2;
 #endif
 
 #ifdef DOUBLE_T
     #define FORMAT "lg"
     typedef double elem_t;
     const elem_t POISON = NAN;
-    const int CANARY_SIZE = 1;
 #endif
 
 #ifdef CHAR_T
     #define FORMAT "c"
     typedef char elem_t;
     const elem_t POISON = '!';
-    const int CANARY_SIZE = 8;
 #endif
 
 #ifdef STRING_T
     #define FORMAT "s"
     typedef char* elem_t;
     const elem_t POISON = "POISON";
-    const int CANARY_SIZE = 8;
 #endif
 
-#define ASSERTSOFT(EXPRESSION, ERROR_CODE)                                       \
-    if (!(EXPRESSION))                                                         \
-      {                                                                        \
-        fprintf (stderr,"%s, failed at %s:%d\n", #ERROR_CODE                   \
-        , __FILE__, __LINE__);                                                 \
-        exit(ERROR_CODE);                                                      \
+#define ASSERTSOFT(EXPRESSION, ERROR_CODE)              \
+    if (!(EXPRESSION))                                  \
+      {                                                 \
+        fprintf (stderr,"%s, failed at %s:%d\n",        \
+         #ERROR_CODE, __FILE__, __LINE__);              \
+        exit(ERROR_CODE);                               \
       }
 
 #define ASSERTHARD(stk)                                 \
     do {                                                \
-        if (stackVerify(stk))                         \
+        if (stackVerify(stk))                           \
           {                                             \
-            DUMP(stk);                                \
+            DUMP(stk);                                  \
             exit(0);                                    \
           }                                             \
         } while(0);
                                                        
 
-#define DUMP(stk)                                           \
-    do {                                                    \
-        stackDump(stk, __FILE__, __LINE__, __func__);     \
+#define DUMP(stk)                                       \
+    do {                                                \
+        stackDump(stk, __FILE__, __LINE__, __func__);   \
        } while(0);
 
 #define COPY(a, b, size)						        \ 
@@ -84,11 +82,9 @@ const canary_t RIGHT_DATA_CANARY = 0xDEADFFFF;
         char *_a = (char*)a, *_b = (char*)b;	        \
         for (size_t i = 0; i < size; i++)	            \
 	        {							                \
-	          _a[i]= _b[i];			                    \
+	          _a[i] = _b[i];			                \
 	        } 					                        \ 
       } while (0)
-
-
 
 enum RESIZE
 {
@@ -111,7 +107,8 @@ enum ERRORS
     RCANARY_DATA_CHANGED    = 16,
     LCANARY_STRUCT_CHANGED  = 32,
     RCANARY_STRUCT_CHANGED  = 64,
-    MAX_CAPACITY_OVERFLOW   = 128,
+    CANARY_SIZE_CHANGED     = 128,
+    MAX_CAPACITY_OVERFLOW   = 256
 };
 
 

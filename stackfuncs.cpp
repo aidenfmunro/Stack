@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
+#include <time.h>
 #include "stackfuncs.h"
 
 void StackInit(stack_t* stk)
@@ -9,35 +10,29 @@ void StackInit(stack_t* stk)
     stk->leftCanary  = LEFT_STRUCT_CANARY;
     stk->size        = 0;
     stk->capacity    = sizeof(canary_t);
-    stk->data        = (elem_t*)calloc((2 * CANARY_SIZE + 1), sizeof(elem_t));
+    stk->data        = (elem_t*)calloc(3, sizeof(canary_t));
     stk->rightCanary = RIGHT_STRUCT_CANARY; 
-
+    
     placeCanary(stk, 0, LEFT_DATA_CANARY);
-    placeCanary(stk, 1 + CANARY_SIZE, RIGHT_DATA_CANARY);
+    placeCanary(stk, 4, RIGHT_DATA_CANARY);
+
+    stk->data = (elem_t*)((void*)stk->data + sizeof(canary_t));
 
     ASSERTHARD(stk); 
 }
 
-void placeCanary(stack_t* stk, size_t place, canary_t canary)
+void placeCanary(stack_t* stack, size_t place, canary_t canary)
 {
-    ASSERTHARD(stk);
+    ASSERTHARD(stack);
 
-    canary_t* temp = (canary_t*)calloc(1, sizeof(canary_t));
-
-    *temp = canary;
-
-    ASSERTSOFT(temp, NULLPTR);
-
-    memcpy(stk->data + place, temp, sizeof(canary_t));
+    memcpy(stack->data + place, &canary, sizeof(canary_t));
     
-    free(temp);
-
-    ASSERTHARD(stk);
+    ASSERTHARD(stack);
 }
 
-void reallocStack(stack_t* stk, const int resize)
+void reallocStack(stack_t* stack, const int resize)
 {
-    ASSERTHARD(stk);
+    ASSERTHARD(stack);
 
     switch (resize)
       {
@@ -47,9 +42,10 @@ void reallocStack(stack_t* stk, const int resize)
 
             // ASSERTSOFT(temp, NULLPTR);
 
-            stk->data = (elem_t*)realloc(stk->data, (stk->capacity * 2 + sizeof(canary_t) * 2)); //temp;
-            stk->capacity *= 2;
-            placeCanary(stk, CANARY_SIZE + stk->capacity / sizeof(elem_t), RIGHT_DATA_CANARY);
+            stack->data = (elem_t*)realloc((elem_t*)((void*)stack->data - sizeof(canary_t)), (stack->capacity * 2 + sizeof(canary_t) * 2));
+            stack->data = (elem_t*)((void*)stack->data + sizeof(canary_t));
+            stack->capacity *= 2;
+            placeCanary(stack, stack->capacity / sizeof(elem_t), RIGHT_DATA_CANARY);
             break;
 
         case SHRINK:
@@ -58,9 +54,10 @@ void reallocStack(stack_t* stk, const int resize)
 
             // ASSERTSOFT(temp, NULLPTR);
 
-            stk->data = (elem_t*)realloc(stk->data, (stk->capacity * 2 + sizeof(canary_t) * 2)); //temp;
-            stk->capacity /= 2;
-            placeCanary(stk, CANARY_SIZE + stk->capacity / sizeof(elem_t), RIGHT_DATA_CANARY);
+            stack->data = (elem_t*)realloc((elem_t*)((void*)stack->data - sizeof(canary_t)), (stack->capacity / 2 + sizeof(canary_t) * 2)); 
+            stack->data = (elem_t*)((void*)stack->data + sizeof(canary_t));
+            stack->capacity /= 2;
+            placeCanary(stack, stack->capacity / sizeof(elem_t), RIGHT_DATA_CANARY);
             break;
         
         default:
@@ -68,7 +65,7 @@ void reallocStack(stack_t* stk, const int resize)
             break;
       } 
 
-    ASSERTHARD(stk);   
+    ASSERTHARD(stack);   
 }
     
 
@@ -80,7 +77,7 @@ void Push(stack_t* stk, elem_t value)
         reallocStack(stk, EXPAND);
       
 
-    stk->data[CANARY_SIZE + stk->size++] = value;
+    stk->data[stk->size++] = value;
 
     poisonFill(stk);
 
@@ -91,10 +88,10 @@ void Pop(stack_t* stk)
 {
     ASSERTHARD(stk);
 
-    if (stk->capacity > 2 * (stk->size + 1) * sizeof(elem_t))
+    if (stk->capacity > 2 * (stk->size + 1) * sizeof(elem_t) && stk->capacity > sizeof(canary_t))
         reallocStack(stk, SHRINK);
 
-    stk->data[CANARY_SIZE + stk->size--] = POISON;
+    stk->data[stk->size--] = POISON;
 
     poisonFill(stk);
 
@@ -105,7 +102,7 @@ void poisonFill(stack_t* stk)
 {
     ASSERTHARD(stk);
 
-    for(size_t i = CANARY_SIZE + stk->size; i < CANARY_SIZE + stk->capacity / sizeof(elem_t); i++)
+    for(size_t i = stk->size; i < stk->capacity / sizeof(elem_t); i++)
         stk->data[i] = POISON;
 
     ASSERTHARD(stk);
@@ -114,45 +111,70 @@ void poisonFill(stack_t* stk)
 void StackDtor(stack_t* stk)
 {
     free(stk->data);
-
 }
 
 void PrintStack(const stack_t* stk)
 {
     printf("\tleft data canary = %llx\n", stk->data[0]);
 
-    for (size_t i = CANARY_SIZE; i < stk->capacity / sizeof(elem_t) + CANARY_SIZE; i++)
+    for (size_t i = 0; i < stk->capacity / sizeof(elem_t); i++)
     if (stk->data[i] == POISON)
-        printf("\t\t ! [%d] %" FORMAT " (POISON!)\n",i - CANARY_SIZE, stk->data[i]);
+        printf("\t\t ! [%d] %" FORMAT " (POISON!)\n", i, stk->data[i]);
     else
-        printf("\t\t   [%d] %" FORMAT "\n",i - CANARY_SIZE, stk->data[i]);
+        printf("\t\t   [%d] %" FORMAT "\n", i, stk->data[i]);
     
-    printf("\tright data canary = %llx\n", stk->data[CANARY_SIZE + stk->capacity / sizeof(elem_t)]);
+    printf("\tright data canary = %llx\n", stk->data[stk->capacity / sizeof(elem_t)]);
 }
+
+const char* StackStrErr (int code)
+    {
+    #define CODE_(code)  case code: return #code;
+
+    switch (code)
+        {
+        CODE_ (NULLPTR_STACK)
+        CODE_ (NULLPTR_DATA)
+        CODE_ (SIZE_BIGGER_CAPACITY)
+        CODE_ (LCANARY_DATA_CHANGED)
+        CODE_ (RCANARY_DATA_CHANGED)
+        CODE_ (LCANARY_STRUCT_CHANGED)
+        CODE_ (RCANARY_STRUCT_CHANGED)
+        CODE_ (MAX_CAPACITY_OVERFLOW)
+        CODE_ (CANARY_SIZE_CHANGED)
+        }
+
+    return "**UNKNOWN**";
+
+    #undef CODE_    
+    }
 
 void stackDump(const stack_t* stk, const char* filename, const int lineNum, const char* functionName)
 {
-    FILE* fp = fopen("log.txt", "w+");
+    time_t t;
+    time(&t);
 
-    fprintf(fp, "Stack [%p], ERROR #%u, in file %s, line %d, function: %s\n", stk, stackVerify(stk), filename, lineNum, functionName);
+    FILE* fp = fopen("logbad.txt", "w+");
+    fprintf(fp, "This log file was made at: %s\n", ctime(&t));
+
+    int error = stackVerify(stk);
+    fprintf(fp, "Stack [%p], ERROR #%u (%s), in file %s, line %d, function: %s\n", stk, error, StackStrErr(error), filename, lineNum, functionName);
     fprintf(fp, "{\n");
-    fprintf(fp, "\tleft struct canary = %llx\n", stk->leftCanary);
+    fprintf(fp, "\tleft struct canary = 0x%llx\n", stk->leftCanary);
     fprintf(fp, "\tsize = %llu\n", stk->size);
     fprintf(fp, "\tcapacity = %llu\n", stk->capacity);
-    fprintf(fp, "\tright struct canary = %llx\n", stk->rightCanary);
+    fprintf(fp, "\tright struct canary = 0x%llx\n", stk->rightCanary);
     fprintf(fp, "\n");
     fprintf(fp, "\tdata[%p]:\n", stk->data);
     fprintf(fp, "\n"); 
+    fprintf(fp, "\tleft data canary = 0x%llx\n", *(elem_t*)((void*)stk->data - sizeof(canary_t)));
 
-    fprintf(fp, "\tleft data canary = %llx\n", stk->data[0]);
-
-    for (size_t i = CANARY_SIZE; i < stk->capacity / sizeof(elem_t) + CANARY_SIZE; i++)
+    for (size_t i = 0; i < stk->capacity / sizeof(elem_t); i++)
     if (stk->data[i] == POISON)
-        fprintf(fp, "\t\t ! [%d] %" FORMAT " (POISON!)\n",i - CANARY_SIZE, stk->data[i]);
+        fprintf(fp, "\t\t ! [%d] %" FORMAT " (POISON!)\n", i, stk->data[i]);
     else
-        fprintf(fp, "\t\t   [%d] %" FORMAT "\n",i - CANARY_SIZE, stk->data[i]);
+        fprintf(fp, "\t\t   [%d] %" FORMAT "\n", i, stk->data[i]);
     
-    fprintf(fp, "\tright data canary = %llx\n", stk->data[CANARY_SIZE + stk->capacity / sizeof(elem_t)]);
+    fprintf(fp, "\tright data canary = 0x%llx\n", stk->data[stk->capacity / sizeof(elem_t)]);
     fprintf(fp, "}\n");
 
     fclose(fp);
@@ -170,11 +192,11 @@ ErrorCode stackVerify(const stack_t* stk)
     if (stk->size > stk->capacity / sizeof(elem_t))
         error |= SIZE_BIGGER_CAPACITY;
     /*
-    if (stk->data[0] != LEFT_DATA_CANARY)
+    if (*(elem_t*)((void*)stk->data - sizeof(canary_t)) != LEFT_DATA_CANARY)
         error |= LCANARY_DATA_CHANGED;
-    if (stk->data[CANARY_SIZE + stk->capacity / sizeof(elem_t)] != RCANARY_DATA_CHANGED)
+    if (*(elem_t*)((void*)stk->data + stk->capacity) != RCANARY_DATA_CHANGED)
         error |= RCANARY_DATA_CHANGED;
-    */    
+    */
     if (stk->leftCanary != LEFT_STRUCT_CANARY)
         error |= LCANARY_STRUCT_CHANGED;
     if (stk->rightCanary != RIGHT_STRUCT_CANARY)
@@ -185,3 +207,20 @@ ErrorCode stackVerify(const stack_t* stk)
     return error;
 }
 
+/*
+uint32_t hashAdler32(const stack_t* stk)
+{
+    uint32_t a = 1, b = 0;
+    size_t index;
+    
+    // Process each byte of the data in order
+
+    for (index = 0; index < len; ++index)
+    {
+        a = (a + data[index]) % MOD_ADLER;
+        b = (b + a) % MOD_ADLER;
+    }
+    
+    return (b << 16) | a;
+}
+*/

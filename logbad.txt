@@ -1,0 +1,30 @@
+This log file was made at: Wed Sep 27 16:59:14 2023
+
+Stack [00000062E6BFFBD0], ERROR #0 (**UNKNOWN**), in file main.cpp, line 32, function: main
+{
+	left struct canary = 0xdeadaaaa
+	size = 9
+	capacity = 64
+	right struct canary = 0xdeadbbbb
+
+	data[00000189617BD578]:
+
+	left data canary = 0xdeadeeee
+		   [0]           10
+		   [1]           50
+		   [2]           60
+		   [3]           70
+		   [4]           50
+		   [5]           60
+		   [6]           70
+		   [7]          100
+		   [8]          900
+		 ! [9]   2147483647 (POISON!)
+		 ! [10]   2147483647 (POISON!)
+		 ! [11]   2147483647 (POISON!)
+		 ! [12]   2147483647 (POISON!)
+		 ! [13]   2147483647 (POISON!)
+		 ! [14]   2147483647 (POISON!)
+		 ! [15]   2147483647 (POISON!)
+	right data canary = 0xdeadffff
+}
