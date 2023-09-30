@@ -106,7 +106,7 @@ void StackDtor(stack_t* stack)
 
 void PrintStack(const stack_t* stack)
 {
-    ON_DEBUG(printf("\tleft data canary = %llx\n", stack->data[0]));
+    ON_DEBUG(printf("\tleft data canary = %llx\n", *(elem_t*)((void*)stack->data - sizeof(canary_t))));
 
     for (size_t i = 0; i < stack->capacity / sizeof(elem_t); i++)
     if (stack->data[i] == POISON)
@@ -159,7 +159,7 @@ void stackDump(const stack_t* stack, const char* filename, const int lineNum, co
     fprintf(fp, "\n");
     fprintf(fp, "\tdata[%p]:\n", stack->data);
     fprintf(fp, "\n"); 
-    ON_DEBUG(fprintf(fp, "\tleft data canary = 0x%llx\n", *(elem_t*)((void*)stack->data - sizeof(canary_t))));
+    ON_DEBUG(fprintf(fp, "\tleft data canary = 0x%llx\n", *(canary_t*)((void*)stack->data - sizeof(canary_t))));
 
     for (size_t i = 0; i < stack->capacity / sizeof(elem_t); i++)
     if (stack->data[i] == POISON)
@@ -167,7 +167,7 @@ void stackDump(const stack_t* stack, const char* filename, const int lineNum, co
     else
         fprintf(fp, "\t\t   [%d] %" FORMAT "\n", i, stack->data[i]);
     
-    ON_DEBUG(fprintf(fp, "\tright data canary = 0x%llx\n", stack->data[stack->capacity / sizeof(elem_t)]));
+    ON_DEBUG(fprintf(fp, "\tright data canary = 0x%llx\n", *(canary_t*)((void*)stack->data + stack->capacity)));
     fprintf(fp, "}\n");
 
     fclose(fp);
