@@ -10,20 +10,16 @@ ErrorCode main()
     Push(&stack, 10);
     Push(&stack, 20);
     Push(&stack, 30);
+    Push(&stack, 40);
     Pop(&stack);
-    Push(&stack, 50);
-    Push(&stack, 60);
-    Push(&stack, 70);
-    Pop(&stack);
-    Pop(&stack);
-    Pop(&stack);
-    Pop(&stack);
-    Push(&stack, 50);
-    Push(&stack, 60);
-   
-    Push(&stack, 900);
 
-    // PrintStack(&stk);
+    /* 
+    stack.size = 0; // hash change
+    */
+
+    Push(&stack, 10);
 
     stackDump(&stack, __FILE__, __LINE__, __func__);
+    PrintStack(&stack);
+    StackDtor(&stack);
 }

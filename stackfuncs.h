@@ -4,24 +4,33 @@
 #include <stdlib.h>
 #include <math.h>
 #include <stdint.h>
+#include <limits.h>
+#include "userconfig.h"
 
 typedef int ErrorCode;
 
 typedef unsigned long long canary_t;
 
-const uint32_t MOD_ADLER = 65521;
+const uint32_t MOD_ADLER = 64;
 
-const int MAX_STACK_SIZE = 4000 * sizeof(canary_t);
+const int MAX_STACK_SIZE = 4000 * 8;
+
+const int DEFAULT_CAPACITY = 8;
 
 const int NULLPTR = 0;
 
-const canary_t LEFT_STRUCT_CANARY = 0xDEADAAAA;
+const canary_t LEFT_STRUCT_CANARY  = 0xDEADAAAA;
 const canary_t RIGHT_STRUCT_CANARY = 0xDEADBBBB;
 
-const canary_t LEFT_DATA_CANARY = 0xDEADEEEE;
-const canary_t RIGHT_DATA_CANARY = 0xDEADFFFF;
+const canary_t LEFT_DATA_CANARY    = 0xDEADEEEE;
+const canary_t RIGHT_DATA_CANARY   = 0xDEADFFFF;
 
-#define INT_T
+#ifdef DEBUG
+    #define ON_DEBUG(...) \
+        __VA_ARGS__
+#else
+    #define ON_DEBUG(...)
+#endif
 
 #ifdef INT_T
     #define FORMAT "d"
@@ -64,10 +73,11 @@ const canary_t RIGHT_DATA_CANARY = 0xDEADFFFF;
 #define ASSERTHARD(stk)                                 \
     do                                                  \
       {                                                 \
-        if (stackVerify(stk))                           \
+        int error = stackVerify(stk);                   \
+        if (error)                                      \
           {                                             \
             DUMP(stk);                                  \
-            exit(1);                                    \
+            exit(error);                                \
           }                                             \
       } while(0);
                                                        
@@ -77,22 +87,6 @@ const canary_t RIGHT_DATA_CANARY = 0xDEADFFFF;
       {                                                 \
         stackDump(stk, __FILE__, __LINE__, __func__);   \
       } while(0);
-
-#define COPY(a, b, size)						        \ 
-    do                                                  \
-      {                                                 \
-        char *_a = (char*)a, *_b = (char*)b;	        \
-        for (size_t i = 0; i < size; i++)	            \
-	        {							                \
-	          _a[i] = _b[i];			                \
-	        } 					                        \ 
-      } while(0)
-
-enum STATUS
-{
-    STACK_BROKEN  = 0,
-    STACK_WORKING = 1
-};
 
 enum ERRORS
 {
@@ -105,19 +99,20 @@ enum ERRORS
     RCANARY_STRUCT_CHANGED  = 64,
     CANARY_SIZE_CHANGED     = 128,
     MAX_CAPACITY_OVERFLOW   = 256,
-    HASH_CHANGED            = 512
+    CAPACITY_LESS_DEFAULT   = 512,
+    HASH_CHANGED            = 1024
 };
 
 typedef struct Stack
 {
-    canary_t leftCanary;
+    ON_DEBUG(canary_t leftCanary);
 
     elem_t* data;
     size_t capacity;
     size_t size;
-    unsigned int hash;
+    ON_DEBUG(unsigned int hash);
 
-    canary_t rightCanary;
+    ON_DEBUG(canary_t rightCanary);
 
 } stack_t;
 
@@ -135,7 +130,11 @@ void Push(stack_t* stk, elem_t value);
 
 void Pop(stack_t* stk);
 
+elem_t Peek(const stack_t* stack);
+
 void PrintStack(const stack_t* stk);
+
+const char* stackStrError (const int code);
 
 ErrorCode stackVerify(const stack_t* stk);
 
