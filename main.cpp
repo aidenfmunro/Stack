@@ -3,23 +3,22 @@
 
 ErrorCode main()
 {
-    stack_t stack = {};
+    stack_t stackwow = {};
 
-    StackInit(&stack);
+    StackInit(stackwow);
 
-    Push(&stack, 10);
-    Push(&stack, 20);
-    Push(&stack, 30);
-    Push(&stack, 40);
-    Pop(&stack);
+    Push(&stackwow, 10);
+    Push(&stackwow, 20);
+    Push(&stackwow, 30);
+    Push(&stackwow, 40);
+    Push(&stackwow, 50);
+    Pop(&stackwow);
 
     /* 
     stack.size = 0; // hash change
     */
 
-    Push(&stack, 10);
-
-    stackDump(&stack, __FILE__, __LINE__, __func__);
-    PrintStack(&stack);
-    StackDtor(&stack);
+    stackDump(&stackwow, __FILE__, __LINE__, __func__);
+    PrintStack(&stackwow);
+    StackDtor(&stackwow);
 }

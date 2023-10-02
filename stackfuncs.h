@@ -86,7 +86,14 @@ const canary_t RIGHT_DATA_CANARY   = 0xDEADFFFF;
     do                                                  \
       {                                                 \
         stackDump(stk, __FILE__, __LINE__, __func__);   \
-      } while(0);
+      } while(0); 
+
+#define StackInit(stk)  \
+    do                  \
+      {                 \
+        stackInit(&stk, #stk);       \
+      } while(0);       \
+
 
 enum ERRORS
 {
@@ -107,6 +114,7 @@ typedef struct Stack
 {
     ON_DEBUG(canary_t leftCanary);
 
+    char* name;
     elem_t* data;
     size_t capacity;
     size_t size;
@@ -116,7 +124,7 @@ typedef struct Stack
 
 } stack_t;
 
-void StackInit(stack_t* stk);
+void stackInit(stack_t* stk, char* name);
 
 void reallocStack(stack_t* stk);
 

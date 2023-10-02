@@ -4,12 +4,13 @@
 #include <time.h>
 #include "stackfuncs.h"
 
-void StackInit(stack_t* stack)
+void stackInit(stack_t* stack, char* name)
 {  
     ON_DEBUG(stack->leftCanary  = LEFT_STRUCT_CANARY);
-    stack->size        = 0;
-    stack->capacity    = DEFAULT_CAPACITY;
-    stack->data        = (elem_t*)calloc(1 ON_DEBUG(+ 2), sizeof(canary_t));
+             stack->name        = name;
+             stack->size        = 0;
+             stack->capacity    = DEFAULT_CAPACITY;
+             stack->data        = (elem_t*)calloc(1 ON_DEBUG(+ 2), sizeof(canary_t));
     ON_DEBUG(stack->hash        = hashAdler32(stack));
     ON_DEBUG(stack->rightCanary = RIGHT_STRUCT_CANARY); 
     
@@ -119,7 +120,7 @@ void PrintStack(const stack_t* stack)
 
 const char* stackStrError (const int code)
 {
-    #define CODE_(code)  case code: return #code;
+    #define CODE_(code) case code: return #code;
 
     switch (code)
         {
@@ -150,7 +151,7 @@ void stackDump(const stack_t* stack, const char* filename, const int lineNum, co
     fprintf(fp, "This log file was made at: %s\n", ctime(&t));
 
     int error = stackVerify(stack);
-    fprintf(fp, "Stack [%p], ERROR #%u (%s), in file %s, line %d, function: %s\n", stack, error, stackStrError(error), filename, lineNum, functionName);
+    fprintf(fp, "Stack (%s) [%p], ERROR #%u (%s), in file %s, line %d, function: %s\n", stack->name, stack, error, stackStrError(error), filename, lineNum, functionName);
     fprintf(fp, "{\n");
     ON_DEBUG(fprintf(fp, "\tleft struct canary = 0x%llx\n", stack->leftCanary));
     fprintf(fp, "\tsize = %llu\n", stack->size);
