@@ -28,9 +28,10 @@ const canary_t RIGHT_DATA_CANARY   = 0xDEADFFFF;
 #ifdef DEBUG
     #define ON_DEBUG(...) \
         __VA_ARGS__
-    #define NAME "%s"
+    #define NAME "(%s)"
 #else
     #define ON_DEBUG(...)
+    #define NAME
 #endif
 
 #ifdef INT_T
@@ -92,7 +93,7 @@ const canary_t RIGHT_DATA_CANARY   = 0xDEADFFFF;
 #define StackInit(stack)                                \
     do                                                  \
       {                                                 \
-        stackInit(&stack, #stack);                      \
+        stackInit(&stack ON_DEBUG(, #stack));           \
       } while(0);                                       \
 
 
@@ -125,7 +126,7 @@ typedef struct Stack
 
 } stack_t;
 
-void stackInit(stack_t* stk, char* name);
+void stackInit(stack_t* stk ON_DEBUG(, char* name));
 
 void reallocStack(stack_t* stk);
 
@@ -137,7 +138,7 @@ void StackDtor(stack_t* stk);
 
 void Push(stack_t* stk, elem_t value);
 
-void Pop(stack_t* stk);
+elem_t Pop(stack_t* stk);
 
 elem_t Peek(const stack_t* stack);
 

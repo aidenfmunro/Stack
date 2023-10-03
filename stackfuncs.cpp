@@ -4,7 +4,7 @@
 #include <time.h>
 #include "stackfuncs.h"
 
-void stackInit(stack_t* stack, char* name)
+void stackInit(stack_t* stack ON_DEBUG(, char* name))
 {  
     ON_DEBUG(stack->leftCanary  = LEFT_STRUCT_CANARY);
     ON_DEBUG(stack->name        = name);
@@ -76,17 +76,21 @@ void Push(stack_t* stack, elem_t value)
     poisonFill(stack);
 }
 
-void Pop(stack_t* stack)
+elem_t Pop(stack_t* stack)
 {
     ON_DEBUG(ASSERTHARD(stack));
 
     reallocStack(stack);
+
+    elem_t peek = stack->data[stack->size];
 
     stack->data[stack->size--] = POISON;
 
     ON_DEBUG(stack->hash = hashAiden32(stack));
 
     poisonFill(stack);
+
+    return peek;
 }
 
 elem_t Peek(const stack_t* stack)
@@ -113,8 +117,8 @@ void StackDtor(stack_t* stack)
     free((elem_t*)((char*)stack->data ON_DEBUG(- sizeof(canary_t))));
     stack->capacity = 0;
     stack->size = 0;
-    stack->hash = 0;
-    stack->name = "NONE";
+    ON_DEBUG(stack->hash = 0);
+    ON_DEBUG(stack->name = "NONE");
 }
 
 void PrintStack(const stack_t* stack)
@@ -162,7 +166,7 @@ void stackDump(const stack_t* stack, const char* filename, const int lineNum, co
 
     int error = stackVerify(stack);
 
-    fprintf(fp, "Stack (%s) [%p], ERROR #%u (%s), in file %s, line %d, function: %s\n"
+    fprintf(fp, "Stack " NAME " [%p], ERROR #%u (%s), in file %s, line %d, function: %s\n"
                 "{\n"
         ON_DEBUG("\tleft struct canary = 0x%llx\n")
                  "\tsize = %llu\n"
@@ -170,11 +174,11 @@ void stackDump(const stack_t* stack, const char* filename, const int lineNum, co
         ON_DEBUG("\tright struct canary = 0x%llx\n")
                  "\n",
 
-        stack->name, stack, error, stackStrError(error), filename, lineNum, functionName,
-        stack->leftCanary, 
+        ON_DEBUG(stack->name,) stack, error, stackStrError(error), filename, lineNum, functionName
+        ON_DEBUG(, stack->leftCanary), 
         stack->size,
-        stack->capacity, 
-        stack->rightCanary);
+        stack->capacity
+        ON_DEBUG(, stack->rightCanary));
 
         fprintf(fp, "\tdata[%p]:\n"
                     "\n" 
@@ -227,7 +231,6 @@ ErrorCode stackVerify(const stack_t* stack)
 
     return error;
 }
-
 
 unsigned int hashAiden32(const stack_t* stack)
 {

@@ -15,13 +15,8 @@ ErrorCode main()
     Push(&stackwow, 50);
     Push(&stackwow, 70);
     Push(&stackwow, 80);
-    Pop(&stackwow);
 
-    /* 
-    stack.size = 0; // hash change
-    */
-
-    stackDump(&stackwow, __FILE__, __LINE__, __func__);
+    //stackDump(&stackwow, __FILE__, __LINE__, __func__);
     PrintStack(&stackwow);
     StackDtor(&stackwow);
 }
