@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 #include "stackfuncs.h"
 
 ErrorCode main()
@@ -12,6 +13,8 @@ ErrorCode main()
     Push(&stackwow, 30);
     Push(&stackwow, 40);
     Push(&stackwow, 50);
+    Push(&stackwow, 70);
+    Push(&stackwow, 80);
     Pop(&stackwow);
 
     /* 

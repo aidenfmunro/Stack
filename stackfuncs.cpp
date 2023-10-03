@@ -7,28 +7,28 @@
 void stackInit(stack_t* stack, char* name)
 {  
     ON_DEBUG(stack->leftCanary  = LEFT_STRUCT_CANARY);
-             stack->name        = name;
+    ON_DEBUG(stack->name        = name);
              stack->size        = 0;
              stack->capacity    = DEFAULT_CAPACITY;
              stack->data        = (elem_t*)calloc(1 ON_DEBUG(+ 2), sizeof(canary_t));
-    ON_DEBUG(stack->hash        = hashAdler32(stack));
+    ON_DEBUG(stack->hash        = hashAiden32(stack));
     ON_DEBUG(stack->rightCanary = RIGHT_STRUCT_CANARY); 
     
     ON_DEBUG(placeCanary(stack, 0, LEFT_DATA_CANARY));
     ON_DEBUG(placeCanary(stack, 4, RIGHT_DATA_CANARY));
 
-    ON_DEBUG(stack->data = (elem_t*)((void*)stack->data + sizeof(canary_t)));
+    ON_DEBUG(stack->data = (elem_t*)((char*)stack->data + sizeof(canary_t)));
 
-    ON_DEBUG(stack->hash = hashAdler32(stack));
+    ON_DEBUG(stack->hash = hashAiden32(stack));
 
     ON_DEBUG(ASSERTHARD(stack)); 
 }
 
 void placeCanary(stack_t* stack, size_t place, canary_t canary)
 {
-    memcpy(stack->data + place, &canary, sizeof(canary_t));
+    *(canary_t*)(stack->data + place) = canary;
 
-    ON_DEBUG(stack->hash = hashAdler32(stack));
+    ON_DEBUG(stack->hash = hashAiden32(stack));
 }
 
 void reallocStack(stack_t* stack)
@@ -37,20 +37,28 @@ void reallocStack(stack_t* stack)
 
     if (stack->capacity < sizeof(elem_t) * (stack->size + 1))
       {
-        stack->data = (elem_t*)realloc((elem_t*)((void*)stack->data ON_DEBUG(- sizeof(canary_t))), \
+        elem_t* temp = (elem_t*)realloc((elem_t*)((char*)stack->data ON_DEBUG(- sizeof(canary_t))),  \
         (stack->capacity * 2 ON_DEBUG(+ sizeof(canary_t) * 2)));
-        stack->data = (elem_t*)((void*)stack->data ON_DEBUG(+ sizeof(canary_t)));
+
+        ASSERTSOFT(temp, NULLPTR);
+
+        stack->data = temp;
+        stack->data = (elem_t*)((char*)stack->data ON_DEBUG(+ sizeof(canary_t)));
         stack->capacity *= 2;
       }
     else if (stack->capacity > 2 * (stack->size + 1) * sizeof(elem_t) && stack->capacity > sizeof(canary_t))
       {
-        stack->data = (elem_t*)realloc((elem_t*)((void*)stack->data ON_DEBUG(- sizeof(canary_t))), \
-        (stack->capacity / 2 ON_DEBUG(+ sizeof(canary_t) * 2))); 
-        stack->data = (elem_t*)((void*)stack->data ON_DEBUG(+ sizeof(canary_t)));
+        elem_t* temp = (elem_t*)realloc((elem_t*)((char*)stack->data ON_DEBUG(- sizeof(canary_t))), \
+        (stack->capacity / 2 ON_DEBUG(+ sizeof(canary_t) * 2)));
+
+        ASSERTSOFT(temp, NULLPTR);
+
+        stack->data = temp;
+        stack->data = (elem_t*)((char*)stack->data ON_DEBUG(+ sizeof(canary_t)));
         stack->capacity /= 2;
       }
 
-    ON_DEBUG(stack->hash = hashAdler32(stack));
+    ON_DEBUG(stack->hash = hashAiden32(stack));
 
     ON_DEBUG(placeCanary(stack, stack->capacity / sizeof(elem_t), RIGHT_DATA_CANARY));  
 }
@@ -63,7 +71,7 @@ void Push(stack_t* stack, elem_t value)
       
     stack->data[stack->size++] = value;
 
-    ON_DEBUG(stack->hash = hashAdler32(stack));
+    ON_DEBUG(stack->hash = hashAiden32(stack));
 
     poisonFill(stack);
 }
@@ -76,7 +84,7 @@ void Pop(stack_t* stack)
 
     stack->data[stack->size--] = POISON;
 
-    ON_DEBUG(stack->hash = hashAdler32(stack));
+    ON_DEBUG(stack->hash = hashAiden32(stack));
 
     poisonFill(stack);
 }
@@ -95,19 +103,23 @@ void poisonFill(stack_t* stack)
     for(size_t i = stack->size; i < stack->capacity / sizeof(elem_t); i++)
         stack->data[i] = POISON;
 
-    ON_DEBUG(stack->hash = hashAdler32(stack));
+    ON_DEBUG(stack->hash = hashAiden32(stack));
 
     ON_DEBUG(ASSERTHARD(stack));
 }
 
 void StackDtor(stack_t* stack)
 {
-    free((elem_t*)((void*)stack->data ON_DEBUG(- sizeof(canary_t))));
+    free((elem_t*)((char*)stack->data ON_DEBUG(- sizeof(canary_t))));
+    stack->capacity = 0;
+    stack->size = 0;
+    stack->hash = 0;
+    stack->name = "NONE";
 }
 
 void PrintStack(const stack_t* stack)
 {
-    ON_DEBUG(printf("\tleft data canary = %llx\n", *(elem_t*)((void*)stack->data - sizeof(canary_t))));
+    ON_DEBUG(printf("\tleft data canary = %llx\n", *(elem_t*)((char*)stack->data - sizeof(canary_t))));
 
     for (size_t i = 0; i < stack->capacity / sizeof(elem_t); i++)
     if (stack->data[i] == POISON)
@@ -144,35 +156,48 @@ const char* stackStrError (const int code)
 
 void stackDump(const stack_t* stack, const char* filename, const int lineNum, const char* functionName)
 {
-    time_t t;
-    time(&t);
-
     FILE* fp = fopen("log.txt", "w+");
-    fprintf(fp, "This log file was made at: %s\n", ctime(&t));
+
+    fprintf(fp, "This log file was made at: %s\n", getTime());
 
     int error = stackVerify(stack);
-    fprintf(fp, "Stack (%s) [%p], ERROR #%u (%s), in file %s, line %d, function: %s\n", stack->name, stack, error, stackStrError(error), filename, lineNum, functionName);
-    fprintf(fp, "{\n");
-    ON_DEBUG(fprintf(fp, "\tleft struct canary = 0x%llx\n", stack->leftCanary));
-    fprintf(fp, "\tsize = %llu\n", stack->size);
-    fprintf(fp, "\tcapacity = %llu\n", stack->capacity);
-    ON_DEBUG(fprintf(fp, "\tright struct canary = 0x%llx\n", stack->rightCanary));
-    fprintf(fp, "\n");
-    fprintf(fp, "\tdata[%p]:\n", stack->data);
-    fprintf(fp, "\n"); 
-    ON_DEBUG(fprintf(fp, "\tleft data canary = 0x%llx\n", *(canary_t*)((void*)stack->data - sizeof(canary_t))));
+
+    fprintf(fp, "Stack (%s) [%p], ERROR #%u (%s), in file %s, line %d, function: %s\n"
+                "{\n"
+        ON_DEBUG("\tleft struct canary = 0x%llx\n")
+                 "\tsize = %llu\n"
+                 "\tcapacity = %llu\n"
+        ON_DEBUG("\tright struct canary = 0x%llx\n")
+                 "\n",
+
+        stack->name, stack, error, stackStrError(error), filename, lineNum, functionName,
+        stack->leftCanary, 
+        stack->size,
+        stack->capacity, 
+        stack->rightCanary);
+
+        fprintf(fp, "\tdata[%p]:\n"
+                    "\n" 
+        ON_DEBUG(   "\tleft data canary = 0x%llx\n"), 
+        stack->data ON_DEBUG(, *(canary_t*)((char*)stack->data - sizeof(canary_t))));
 
     for (size_t i = 0; i < stack->capacity / sizeof(elem_t); i++)
-    if (stack->data[i] == POISON)
+      if (stack->data[i] == POISON)
         fprintf(fp, "\t\t ! [%d] %" FORMAT " (POISON!)\n", i, stack->data[i]);
-    else
+      else
         fprintf(fp, "\t\t   [%d] %" FORMAT "\n", i, stack->data[i]);
     
-    ON_DEBUG(fprintf(fp, "\tright data canary = 0x%llx\n", *(canary_t*)((void*)stack->data + stack->capacity)));
+    ON_DEBUG(fprintf(fp, "\tright data canary = 0x%llx\n", *(canary_t*)((char*)stack->data + stack->capacity)));
     fprintf(fp, "}\n");
 
     fclose(fp);
+}
 
+const char* getTime(void)
+{
+    time_t t;
+    time(&t);
+    return ctime(&t);
 }
 
 ErrorCode stackVerify(const stack_t* stack)
@@ -185,9 +210,9 @@ ErrorCode stackVerify(const stack_t* stack)
         error |= NULLPTR_DATA;
     if (stack->size > stack->capacity / sizeof(elem_t))
         error |= SIZE_BIGGER_CAPACITY;
-    ON_DEBUG(if (*(canary_t*)((void*)stack->data - sizeof(canary_t)) != LEFT_DATA_CANARY) \
+    ON_DEBUG(if (*(canary_t*)((char*)stack->data - sizeof(canary_t)) != LEFT_DATA_CANARY) \
         error |= LCANARY_DATA_CHANGED);
-    ON_DEBUG(if (*(canary_t*)((void*)stack->data + stack->capacity) != RIGHT_DATA_CANARY) \
+    ON_DEBUG(if (*(canary_t*)((char*)stack->data + stack->capacity) != RIGHT_DATA_CANARY) \
         error |= RCANARY_DATA_CHANGED);
     ON_DEBUG(if (stack->leftCanary != LEFT_STRUCT_CANARY) \
         error |= LCANARY_STRUCT_CHANGED);
@@ -197,24 +222,24 @@ ErrorCode stackVerify(const stack_t* stack)
         error |= MAX_CAPACITY_OVERFLOW;
     if (stack->capacity < DEFAULT_CAPACITY)
         error |= CAPACITY_LESS_DEFAULT;
-    ON_DEBUG(if (stack->hash != hashAdler32(stack)) \
+    ON_DEBUG(if (stack->hash != hashAiden32(stack)) \
         error |= HASH_CHANGED);
 
     return error;
 }
 
 
-unsigned int hashAdler32(const stack_t* stack)
+unsigned int hashAiden32(const stack_t* stack)
 {
-    unsigned int a = 1;
+    unsigned int hashSum = 1;
     
     for (size_t i = 0; i < stack->capacity; i++)
     {
-        a = (a + *(char*)((void*)stack->data + i)) % MOD_ADLER;
+        hashSum = (hashSum + *((char*)stack->data + i)) % MOD_AIDEN;
     }
 
-    a += stack->size % MOD_ADLER;
-    a += stack->capacity % MOD_ADLER;
+    hashSum += stack->size % MOD_AIDEN;
+    hashSum += stack->capacity % MOD_AIDEN;
     
-    return a;
+    return hashSum;
 }   

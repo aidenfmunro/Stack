@@ -11,7 +11,7 @@ typedef int ErrorCode;
 
 typedef unsigned long long canary_t;
 
-const uint32_t MOD_ADLER = 64;
+const uint32_t MOD_AIDEN = 64;
 
 const int MAX_STACK_SIZE = 4000 * 8;
 
@@ -28,6 +28,7 @@ const canary_t RIGHT_DATA_CANARY   = 0xDEADFFFF;
 #ifdef DEBUG
     #define ON_DEBUG(...) \
         __VA_ARGS__
+    #define NAME "%s"
 #else
     #define ON_DEBUG(...)
 #endif
@@ -70,51 +71,51 @@ const canary_t RIGHT_DATA_CANARY   = 0xDEADFFFF;
         exit(ERROR_CODE);                               \
       }
 
-#define ASSERTHARD(stk)                                 \
+#define ASSERTHARD(stack)                               \
     do                                                  \
       {                                                 \
-        int error = stackVerify(stk);                   \
+        int error = stackVerify(stack);                 \
         if (error)                                      \
           {                                             \
-            DUMP(stk);                                  \
+            DUMP(stack);                                \
             exit(error);                                \
           }                                             \
       } while(0);
                                                        
 
-#define DUMP(stk)                                       \
+#define DUMP(stack)                                     \
     do                                                  \
       {                                                 \
-        stackDump(stk, __FILE__, __LINE__, __func__);   \
+        stackDump(stack, __FILE__, __LINE__, __func__); \
       } while(0); 
 
-#define StackInit(stk)  \
-    do                  \
-      {                 \
-        stackInit(&stk, #stk);       \
-      } while(0);       \
+#define StackInit(stack)                                \
+    do                                                  \
+      {                                                 \
+        stackInit(&stack, #stack);                      \
+      } while(0);                                       \
 
 
 enum ERRORS
 {
-    NULLPTR_STACK           = 1, 
-    NULLPTR_DATA            = 2,
-    SIZE_BIGGER_CAPACITY    = 4,
-    LCANARY_DATA_CHANGED    = 8,
-    RCANARY_DATA_CHANGED    = 16,
-    LCANARY_STRUCT_CHANGED  = 32,
-    RCANARY_STRUCT_CHANGED  = 64,
-    CANARY_SIZE_CHANGED     = 128,
-    MAX_CAPACITY_OVERFLOW   = 256,
-    CAPACITY_LESS_DEFAULT   = 512,
-    HASH_CHANGED            = 1024
+    NULLPTR_STACK           = (1 << 0), 
+    NULLPTR_DATA            = (1 << 1),
+    SIZE_BIGGER_CAPACITY    = (1 << 2), 
+    LCANARY_DATA_CHANGED    = (1 << 3),
+    RCANARY_DATA_CHANGED    = (1 << 4),
+    LCANARY_STRUCT_CHANGED  = (1 << 5),
+    RCANARY_STRUCT_CHANGED  = (1 << 6),
+    CANARY_SIZE_CHANGED     = (1 << 7),
+    MAX_CAPACITY_OVERFLOW   = (1 << 8),
+    CAPACITY_LESS_DEFAULT   = (1 << 9),
+    HASH_CHANGED            = (1 << 10)
 };
 
 typedef struct Stack
 {
     ON_DEBUG(canary_t leftCanary);
 
-    char* name;
+    ON_DEBUG(char* name);
     elem_t* data;
     size_t capacity;
     size_t size;
@@ -142,12 +143,14 @@ elem_t Peek(const stack_t* stack);
 
 void PrintStack(const stack_t* stk);
 
+const char* getTime(void);
+
 const char* stackStrError (const int code);
 
 ErrorCode stackVerify(const stack_t* stk);
 
 void stackDump(const stack_t* stk, const char* filename, const int lineNum, const char* functionName);
 
-unsigned int hashAdler32(const stack_t* stack);
+unsigned int hashAiden32(const stack_t* stack);
 
 #endif
