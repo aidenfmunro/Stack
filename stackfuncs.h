@@ -15,8 +15,6 @@ const uint32_t MOD_AIDEN = 64;
 
 const int MAX_STACK_SIZE = 4000 * 8;
 
-const int DEFAULT_CAPACITY = 8;
-
 const int NULLPTR = 0;
 
 const canary_t LEFT_STRUCT_CANARY  = 0xDEADAAAA;
@@ -24,6 +22,8 @@ const canary_t RIGHT_STRUCT_CANARY = 0xDEADBBBB;
 
 const canary_t LEFT_DATA_CANARY    = 0xDEADEEEE;
 const canary_t RIGHT_DATA_CANARY   = 0xDEADFFFF;
+
+#define LOG fprintf
 
 #ifdef DEBUG
     #define ON_DEBUG(...) \
@@ -38,24 +38,28 @@ const canary_t RIGHT_DATA_CANARY   = 0xDEADFFFF;
     #define FORMAT "d"
     typedef int elem_t;
     const elem_t POISON = INT_MAX;
+    const int DEFAULT_CAPACITY = 2;
 #endif
 
 #ifdef FLOAT_T
     #define FORMAT "f"
     typedef float elem_t;
     const elem_t POISON = NAN;
+    const int DEFAULT_CAPACITY = 2;
 #endif
 
 #ifdef DOUBLE_T
     #define FORMAT "lg"
     typedef double elem_t;
     const elem_t POISON = NAN;
+    const int DEFAULT_CAPACITY = 1;
 #endif
 
 #ifdef CHAR_T
     #define FORMAT "c"
     typedef char elem_t;
     const elem_t POISON = '!';
+    const int DEFAULT_CAPACITY = 8;
 #endif
 
 #ifdef STRING_T
@@ -90,14 +94,27 @@ const canary_t RIGHT_DATA_CANARY   = 0xDEADFFFF;
         stackDump(stack, __FILE__, __LINE__, __func__); \
       } while(0); 
 
-#define StackInit(stack)                                \
+#define CHECK_ERROR(EXPRESSION, ERROR, errorSum)        \
+    if (EXPRESSION)                                     \
+      {                                                 \
+        errorSum += ERROR;                              \
+      }
+                
+
+#define CreateStack(stack)                                \
     do                                                  \
       {                                                 \
-        stackInit(&stack ON_DEBUG(, #stack));           \
+        createStack(&stack ON_DEBUG(, #stack));           \
       } while(0);                                       \
 
 
-enum ERRORS
+enum RESIZE
+{
+    COMPRESS = -1,
+    EXPAND   = 1
+};
+
+enum STACK_ERRORS
 {
     NULLPTR_STACK           = (1 << 0), 
     NULLPTR_DATA            = (1 << 1),
@@ -112,7 +129,15 @@ enum ERRORS
     HASH_CHANGED            = (1 << 10)
 };
 
-typedef struct Stack
+enum ERRORS
+{
+    OK                  = 0,
+    NO_MEMORY           = 3,
+    STACK_DELETED       = 5,
+    UNABLE_TO_OPEN_FILE = 7
+};
+
+struct Stack
 {
     ON_DEBUG(canary_t leftCanary);
 
@@ -124,34 +149,38 @@ typedef struct Stack
 
     ON_DEBUG(canary_t rightCanary);
 
-} stack_t;
+};
 
-void stackInit(stack_t* stk ON_DEBUG(, char* name));
+ErrorCode createStack(Stack* stk ON_DEBUG(, char* name));
 
-void reallocStack(stack_t* stk);
+elem_t* initData(void);
 
-void placeCanary(stack_t* stk, size_t place, canary_t canary);
+ErrorCode reallocStack(Stack* stk);
 
-void poisonFill(stack_t* stk);
+ErrorCode placeCanary(Stack* stk, size_t place, canary_t canary);
 
-void StackDtor(stack_t* stk);
+ErrorCode poisonFill(Stack* stk);
 
-void Push(stack_t* stk, elem_t value);
+ErrorCode DestroyStack(Stack* stk);
 
-elem_t Pop(stack_t* stk);
+ErrorCode Push(Stack* stk, elem_t value);
 
-elem_t Peek(const stack_t* stack);
+elem_t Pop(Stack* stk);
 
-void PrintStack(const stack_t* stk);
+ErrorCode PrintStack(const Stack* stk);
 
 const char* getTime(void);
 
 const char* stackStrError (const int code);
 
-ErrorCode stackVerify(const stack_t* stk);
+ErrorCode stackVerify(const Stack* stk);
 
-void stackDump(const stack_t* stk, const char* filename, const int lineNum, const char* functionName);
+ErrorCode stackDump(const Stack* stk, const char* filename, const int lineNum, const char* functionName);
 
-unsigned int hashAiden32(const stack_t* stack);
+canary_t* getCanaryRightptr(const Stack* stack);
+
+canary_t* getCanaryLeftptr(const Stack* stack);
+
+unsigned int hashAiden32(const Stack* stack);
 
 #endif

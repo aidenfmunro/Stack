@@ -1,22 +1,25 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include "stackfuncs.h"
 
 ErrorCode main()
 {
-    stack_t stackwow = {};
+    Stack stackwow = {};
 
-    StackInit(stackwow);
+    CreateStack(stackwow);
+    
 
     Push(&stackwow, 10);
+    
     Push(&stackwow, 20);
     Push(&stackwow, 30);
     Push(&stackwow, 40);
     Push(&stackwow, 50);
-    Push(&stackwow, 70);
-    Push(&stackwow, 80);
+    Pop(&stackwow);
 
-    //stackDump(&stackwow, __FILE__, __LINE__, __func__);
-    PrintStack(&stackwow);
-    StackDtor(&stackwow);
+    
+    Push(&stackwow, 80);
+    
+    stackDump(&stackwow, __FILE__, __LINE__, __func__);
+    // PrintStack(&stackwow);
+    
+    DestroyStack(&stackwow);
 }

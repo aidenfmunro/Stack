@@ -1,26 +1,22 @@
-This log file was made at: Tue Oct  3 15:09:55 2023
+This log file was made at: Wed Oct 11 15:56:05 2023
 
-Stack  [000000EBEF7FF8F0], ERROR #0 (UNKNOWN), in file c:\Users\Aiden\Documents\GitHub\Stack\main.cpp, line 25, function: main
+Stack (stackwow) [0x7ffe9d1f2020], ERROR #0 (UNKNOWN), in file main.cpp, line 21, function: main
 {
-	size = 8
-	capacity = 64
+	left struct canary = 0xdeadaaaa
+	size = 5
+	capacity = 8
+	right struct canary = 0xdeadbbbb
 
-	data[000001FE10CC7D20]:
+	data[0x559b822e12a8]:
 
+	left data canary = 0xdeadeeee
 		   [0] 10
 		   [1] 20
 		   [2] 30
 		   [3] 40
-		   [4] 50
-		   [5] 70
-		   [6] 80
-		   [7] 70
-		 ! [8] 2147483647 (POISON!)
-		 ! [9] 2147483647 (POISON!)
-		 ! [10] 2147483647 (POISON!)
-		 ! [11] 2147483647 (POISON!)
-		 ! [12] 2147483647 (POISON!)
-		 ! [13] 2147483647 (POISON!)
-		 ! [14] 2147483647 (POISON!)
-		 ! [15] 2147483647 (POISON!)
+		   [4] 80
+		 ! [5] 2147483647 (POISON!)
+		 ! [6] 2147483647 (POISON!)
+		 ! [7] 2147483647 (POISON!)
+	right data canary = 0xdeadffff
 }
